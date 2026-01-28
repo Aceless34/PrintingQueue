@@ -12,7 +12,7 @@
     <div className="glass-card rounded-3xl p-6 shadow-card">
       <h2 className="font-display text-xl font-semibold">Neues Projekt anlegen</h2>
       <p className="mt-1 text-sm text-slate-500">
-        Schicke deiner Freundin ein kompaktes Formular fÃ¼r neue Druckideen.
+        Schicke deiner Freundin ein kompaktes Formular für neue Druckideen.
       </p>
       <form className="mt-6 flex flex-col gap-4" onSubmit={onSubmit}>
         <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
@@ -28,7 +28,7 @@
           />
         </label>
         <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
-          GewÃ¼nschte Anzahl
+          Gewünschte Anzahl
           <input
             className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-accent"
             name="quantity"
@@ -40,7 +40,7 @@
           />
         </label>
         <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
-          Notizen / ErgÃ¤nzungen
+          Notizen / Ergänzungen
           <textarea
             className="min-h-[120px] rounded-xl border border-slate-200 bg-white px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-accent"
             name="notes"

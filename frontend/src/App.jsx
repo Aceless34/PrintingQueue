@@ -173,14 +173,14 @@ export default function App() {
   };
 
   const handleDeleteProject = async (id) => {
-    const ok = confirm("Projekt wirklich lÃ¶schen?");
+    const ok = confirm("Projekt wirklich löschen?");
     if (!ok) return;
     setError("");
     try {
       await deleteProject(id);
       await loadProjects();
     } catch (err) {
-      setError(err.message || "LÃ¶schen fehlgeschlagen.");
+      setError(err.message || "Löschen fehlgeschlagen.");
     }
   };
 

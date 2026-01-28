@@ -10,7 +10,7 @@
             3D-Druck Projekte im Blick
           </h1>
           <p className="max-w-xl text-sm text-slate-500">
-            Sammle alle DruckauftrÃ¤ge, priorisiere sie schnell und halte den
+            Sammle alle Druckaufträge, priorisiere sie schnell und halte den
             Status in einem kompakten Dashboard im Blick.
           </p>
         </div>

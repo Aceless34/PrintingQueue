@@ -16,7 +16,7 @@
         <div>
           <h2 className="font-display text-xl font-semibold">Admin-Dashboard</h2>
           <p className="text-sm text-slate-500">
-            Ãœbersicht, Status und Archivierung deiner Druckprojekte.
+            Übersicht, Status und Archivierung deiner Druckprojekte.
           </p>
         </div>
         <label className="flex items-center gap-2 text-sm text-slate-500">
@@ -138,7 +138,7 @@
                           className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-500 hover:border-rose-400 hover:text-rose-600"
                           onClick={() => onDelete(project.id)}
                         >
-                          LÃ¶schen
+                          Löschen
                         </button>
                       </div>
                     </td>
