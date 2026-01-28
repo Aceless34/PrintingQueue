@@ -59,7 +59,7 @@ const createApp = () => {
     try {
       const includeArchived = req.query.includeArchived === "1";
       const rows = await all(
-        `SELECT projects.*, filament_colors.name AS color_name, filament_colors.in_stock AS color_in_stock
+        `SELECT projects.*, filament_colors.name AS color_name, filament_colors.manufacturer AS color_manufacturer, filament_colors.in_stock AS color_in_stock
          FROM projects
          LEFT JOIN filament_colors ON filament_colors.id = projects.color_id
          ${includeArchived ? "" : "WHERE projects.archived = 0"}
@@ -149,7 +149,7 @@ const createApp = () => {
       );
 
       const project = await get(
-        `SELECT projects.*, filament_colors.name AS color_name, filament_colors.in_stock AS color_in_stock
+        `SELECT projects.*, filament_colors.name AS color_name, filament_colors.manufacturer AS color_manufacturer, filament_colors.in_stock AS color_in_stock
          FROM projects
          LEFT JOIN filament_colors ON filament_colors.id = projects.color_id
          WHERE projects.id = ?`,
@@ -199,7 +199,7 @@ const createApp = () => {
 
       await run(`UPDATE projects SET ${updates.join(", ")} WHERE id = ?`, params);
       const project = await get(
-        `SELECT projects.*, filament_colors.name AS color_name, filament_colors.in_stock AS color_in_stock
+        `SELECT projects.*, filament_colors.name AS color_name, filament_colors.manufacturer AS color_manufacturer, filament_colors.in_stock AS color_in_stock
          FROM projects
          LEFT JOIN filament_colors ON filament_colors.id = projects.color_id
          WHERE projects.id = ?`,
