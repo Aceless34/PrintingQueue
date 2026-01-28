@@ -143,4 +143,12 @@ const init = async () => {
   await migrateFilamentColors();
 };
 
-module.exports = { db, run, get, all, init };
+const close = () =>
+  new Promise((resolve, reject) => {
+    db.close((err) => {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+
+module.exports = { db, run, get, all, init, close };
