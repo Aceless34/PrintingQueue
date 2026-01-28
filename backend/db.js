@@ -34,6 +34,14 @@ const all = (sql, params = []) =>
     });
   });
 
+const ensureColumn = async (tableName, columnName, columnDef) => {
+  const columns = await all(`PRAGMA table_info(${tableName})`);
+  const exists = columns.some((col) => col.name === columnName);
+  if (!exists) {
+    await run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDef}`);
+  }
+};
+
 const init = async () => {
   await run(
     `CREATE TABLE IF NOT EXISTS projects (
@@ -48,6 +56,19 @@ const init = async () => {
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );`
   );
+
+  await run(
+    `CREATE TABLE IF NOT EXISTS filament_colors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+      in_stock INTEGER NOT NULL DEFAULT 1,
+      grams_available INTEGER,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`
+  );
+
+  await ensureColumn("projects", "color_id", "INTEGER");
 };
 
 module.exports = { db, run, get, all, init };

@@ -23,14 +23,23 @@ export default function App() {
     quantity: 1,
     notes: "",
     urgency: "Mittel",
+    colorId: "",
+    colorName: "",
   });
   const [projects, setProjects] = useState([]);
+  const [colors, setColors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [error, setError] = useState("");
+  const [addingColor, setAddingColor] = useState(false);
+  const [newColorName, setNewColorName] = useState("");
 
   const projectCount = useMemo(() => projects.length, [projects]);
+  const availableColors = useMemo(
+    () => colors.filter((color) => color.in_stock),
+    [colors]
+  );
 
   const loadProjects = async () => {
     setLoading(true);
@@ -49,9 +58,24 @@ export default function App() {
     }
   };
 
+  const loadColors = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/filament-colors`);
+      if (!res.ok) throw new Error("Konnte Farben nicht laden");
+      const data = await res.json();
+      setColors(data);
+    } catch (err) {
+      setError("Filamentfarben konnten nicht geladen werden.");
+    }
+  };
+
   useEffect(() => {
     loadProjects();
   }, [showArchived]);
+
+  useEffect(() => {
+    loadColors();
+  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -66,12 +90,31 @@ export default function App() {
     setSubmitting(true);
     setError("");
     try {
+      const payload = {
+        url: formData.url,
+        quantity: formData.quantity,
+        notes: formData.notes,
+        urgency: formData.urgency,
+      };
+
+      if (formData.colorId === "new") {
+        const trimmedName = formData.colorName.trim();
+        if (!trimmedName) {
+          setError("Bitte eine neue Farbe angeben.");
+          setSubmitting(false);
+          return;
+        }
+        payload.colorName = trimmedName;
+      } else if (formData.colorId) {
+        payload.colorId = Number(formData.colorId);
+      }
+
       const res = await fetch(`${API_BASE}/projects`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -79,8 +122,16 @@ export default function App() {
         throw new Error(payload?.error || "Fehler beim Speichern");
       }
 
-      setFormData({ url: "", quantity: 1, notes: "", urgency: "Mittel" });
+      setFormData({
+        url: "",
+        quantity: 1,
+        notes: "",
+        urgency: "Mittel",
+        colorId: "",
+        colorName: "",
+      });
       await loadProjects();
+      await loadColors();
     } catch (err) {
       setError(err.message || "Fehler beim Speichern");
     } finally {
@@ -134,6 +185,50 @@ export default function App() {
       await loadProjects();
     } catch (err) {
       setError("Löschen fehlgeschlagen.");
+    }
+  };
+
+  const addColor = async (event) => {
+    event.preventDefault();
+    const trimmedName = newColorName.trim();
+    if (!trimmedName) {
+      setError("Bitte eine Farbe eingeben.");
+      return;
+    }
+    setAddingColor(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/filament-colors`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: trimmedName, in_stock: true }),
+      });
+      if (!res.ok) throw new Error("Farbe konnte nicht gespeichert werden");
+      setNewColorName("");
+      await loadColors();
+    } catch (err) {
+      setError("Farbe konnte nicht gespeichert werden.");
+    } finally {
+      setAddingColor(false);
+    }
+  };
+
+  const toggleColorStock = async (color) => {
+    setError("");
+    try {
+      const res = await fetch(`${API_BASE}/filament-colors/${color.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ in_stock: !color.in_stock }),
+      });
+      if (!res.ok) throw new Error("Farbe konnte nicht aktualisiert werden");
+      await loadColors();
+    } catch (err) {
+      setError("Farbe konnte nicht aktualisiert werden.");
     }
   };
 
@@ -224,6 +319,45 @@ export default function App() {
                   ))}
                 </select>
               </label>
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
+                Filamentfarbe
+                <select
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-accent"
+                  name="colorId"
+                  value={formData.colorId}
+                  onChange={(event) => {
+                    handleChange(event);
+                    if (event.target.value !== "new") {
+                      setFormData((prev) => ({ ...prev, colorName: "" }));
+                    }
+                  }}
+                >
+                  <option value="">Keine Auswahl</option>
+                  {availableColors.map((color) => (
+                    <option key={color.id} value={String(color.id)}>
+                      {color.name}
+                    </option>
+                  ))}
+                  <option value="new">Andere / nicht vorhanden</option>
+                </select>
+              </label>
+              {formData.colorId === "new" && (
+                <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
+                  Neue Farbe
+                  <input
+                    className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-amber-400"
+                    name="colorName"
+                    type="text"
+                    placeholder="z.B. Pastell Blau"
+                    value={formData.colorName}
+                    onChange={handleChange}
+                    required
+                  />
+                  <span className="text-xs text-amber-600">
+                    Hinweis: Diese Farbe wird als nicht vorhanden markiert.
+                  </span>
+                </label>
+              )}
               <button
                 className="mt-2 rounded-xl bg-accent px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-accentDeep disabled:cursor-not-allowed disabled:opacity-60"
                 type="submit"
@@ -270,6 +404,7 @@ export default function App() {
                         <th className="px-4 py-3">Projekt</th>
                         <th className="px-4 py-3">Dringlichkeit</th>
                         <th className="px-4 py-3">Status</th>
+                        <th className="px-4 py-3">Farbe</th>
                         <th className="px-4 py-3 text-right">Aktion</th>
                       </tr>
                     </thead>
@@ -322,6 +457,24 @@ export default function App() {
                               ))}
                             </select>
                           </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                                  project.color_in_stock === 0
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-slate-100 text-slate-600"
+                                }`}
+                              >
+                                {project.color_name || "Keine"}
+                              </span>
+                              {project.color_in_stock === 0 && (
+                                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
+                                  !
+                                </span>
+                              )}
+                            </div>
+                          </td>
                           <td className="px-4 py-4 text-right">
                             <div className="flex flex-col items-end gap-2">
                               {!project.archived && (
@@ -344,6 +497,69 @@ export default function App() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-white">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+                <div>
+                  <div className="text-sm font-semibold text-ink">
+                    Filamentfarben
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    Fehlende Farben sind mit einem Ausrufezeichen markiert.
+                  </div>
+                </div>
+                <form className="flex flex-wrap items-center gap-2" onSubmit={addColor}>
+                  <input
+                    className="rounded-full border border-slate-200 px-3 py-1 text-xs text-ink outline-none focus:border-accent"
+                    type="text"
+                    placeholder="Neue Farbe hinzufuegen"
+                    value={newColorName}
+                    onChange={(event) => setNewColorName(event.target.value)}
+                  />
+                  <button
+                    className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-500 hover:border-accent hover:text-accent disabled:opacity-60"
+                    type="submit"
+                    disabled={addingColor}
+                  >
+                    {addingColor ? "Speichern..." : "Hinzufuegen"}
+                  </button>
+                </form>
+              </div>
+              {colors.length === 0 ? (
+                <div className="px-4 py-4 text-sm text-slate-500">
+                  Noch keine Farben gepflegt.
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {colors.map((color) => (
+                    <div
+                      key={color.id}
+                      className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            color.in_stock ? "bg-emerald-500" : "bg-amber-500"
+                          }`}
+                        />
+                        <span className="font-medium text-ink">{color.name}</span>
+                        {!color.in_stock && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                            !
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-500 hover:border-accent hover:text-accent"
+                        onClick={() => toggleColorStock(color)}
+                      >
+                        {color.in_stock ? "Als fehlend markieren" : "Als vorhanden markieren"}
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

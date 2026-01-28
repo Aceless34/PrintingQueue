@@ -1,0 +1,28 @@
+﻿%% Auto-generated from SQLite schema in backend/data/printingqueue.db
+%% Note: No foreign keys are declared in the database.
+
+erDiagram
+  FILAMENT_COLORS {
+    INTEGER id PK
+    TEXT name "UNIQUE, NOCASE"
+    INTEGER in_stock "DEFAULT 1"
+    INTEGER grams_available
+    TEXT created_at "DEFAULT CURRENT_TIMESTAMP"
+    TEXT updated_at "DEFAULT CURRENT_TIMESTAMP"
+  }
+
+  PROJECTS {
+    INTEGER id PK
+    TEXT url
+    INTEGER quantity "DEFAULT 1"
+    TEXT notes
+    TEXT urgency
+    TEXT status "DEFAULT 'Offen'"
+    INTEGER archived "DEFAULT 0"
+    TEXT created_at "DEFAULT CURRENT_TIMESTAMP"
+    TEXT updated_at "DEFAULT CURRENT_TIMESTAMP"
+    INTEGER color_id
+  }
+
+  %% Conceptual link (not enforced by FK): projects.color_id -> filament_colors.id
+  PROJECTS }o--|| FILAMENT_COLORS : "color_id (optional)"
