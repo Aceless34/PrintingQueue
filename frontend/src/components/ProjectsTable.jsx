@@ -14,15 +14,17 @@
     <div className="glass-card rounded-3xl p-6 shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-semibold">Admin-Dashboard</h2>
-          <p className="text-sm text-slate-500">
+          <h2 className="font-display text-xl font-semibold text-ink dark:text-haze">
+            Admin-Dashboard
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Übersicht, Status und Archivierung deiner Druckprojekte.
           </p>
         </div>
-        <label className="flex items-center gap-2 text-sm text-slate-500">
+        <label className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
           <input
             type="checkbox"
-            className="h-4 w-4 rounded border-slate-300 text-accent focus:ring-accent"
+            className="h-4 w-4 rounded border-slate-300 text-accent focus:ring-accent dark:border-slate-600 dark:bg-slate-900"
             checked={showArchived}
             onChange={onToggleArchived}
           />
@@ -30,17 +32,19 @@
         </label>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
         {loading ? (
-          <div className="p-6 text-sm text-slate-500">Lade Projekte...</div>
+          <div className="p-6 text-sm text-slate-500 dark:text-slate-400">
+            Lade Projekte...
+          </div>
         ) : projects.length === 0 ? (
-          <div className="p-6 text-sm text-slate-500">
+          <div className="p-6 text-sm text-slate-500 dark:text-slate-400">
             Noch keine Projekte eingereicht.
           </div>
         ) : (
           <div className="max-h-[420px] overflow-auto">
             <table className="w-full text-left text-sm">
-              <thead className="sticky top-0 bg-white text-xs uppercase tracking-[0.25em] text-slate-400">
+              <thead className="sticky top-0 bg-white text-xs uppercase tracking-[0.25em] text-slate-400 dark:bg-slate-900 dark:text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Projekt</th>
                   <th className="px-4 py-3">Dringlichkeit</th>
@@ -49,24 +53,24 @@
                   <th className="px-4 py-3 text-right">Aktion</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {projects.map((project) => (
                   <tr key={project.id} className="align-top">
                     <td className="px-4 py-4">
                       <div className="flex flex-col gap-1">
                         <a
-                          className="text-sm font-semibold text-ink underline-offset-4 hover:underline"
+                          className="text-sm font-semibold text-ink underline-offset-4 hover:underline dark:text-haze"
                           href={project.url}
                           target="_blank"
                           rel="noreferrer"
                         >
                           {project.url}
                         </a>
-                        <div className="text-xs text-slate-400">
+                        <div className="text-xs text-slate-400 dark:text-slate-500">
                           Menge: {project.quantity}
                         </div>
                         {project.notes && (
-                          <div className="text-xs text-slate-500">
+                          <div className="text-xs text-slate-500 dark:text-slate-400">
                             {project.notes}
                           </div>
                         )}
@@ -76,7 +80,7 @@
                       <span
                         className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
                           urgencyStyles[project.urgency] ||
-                          "bg-slate-100 text-slate-600"
+                          "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                         }`}
                       >
                         {project.urgency}
@@ -86,7 +90,7 @@
                       <select
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${
                           statusStyles[project.status] ||
-                          "bg-slate-100 text-slate-600"
+                          "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                         }`}
                         value={project.status}
                         onChange={(event) =>
@@ -105,8 +109,8 @@
                         <span
                           className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
                             project.color_in_stock === 0
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-slate-100 text-slate-600"
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200"
+                              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                           }`}
                         >
                           {project.color_name
@@ -128,14 +132,14 @@
                       <div className="flex flex-col items-end gap-2">
                         {!project.archived && (
                           <button
-                            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-500 hover:border-accent hover:text-accent"
+                            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-500 hover:border-accent hover:text-accent dark:border-slate-700 dark:text-slate-300 dark:hover:border-amber-400 dark:hover:text-amber-300"
                             onClick={() => onArchive(project.id)}
                           >
                             Archivieren
                           </button>
                         )}
                         <button
-                          className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-500 hover:border-rose-400 hover:text-rose-600"
+                          className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-500 hover:border-rose-400 hover:text-rose-600 dark:border-rose-500/40 dark:text-rose-300 dark:hover:border-rose-400 dark:hover:text-rose-200"
                           onClick={() => onDelete(project.id)}
                         >
                           Löschen

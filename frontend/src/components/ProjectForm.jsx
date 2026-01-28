@@ -10,15 +10,17 @@
 }) {
   return (
     <div className="glass-card rounded-3xl p-6 shadow-card">
-      <h2 className="font-display text-xl font-semibold">Neues Projekt anlegen</h2>
-      <p className="mt-1 text-sm text-slate-500">
+      <h2 className="font-display text-xl font-semibold text-ink dark:text-haze">
+        Neues Projekt anlegen
+      </h2>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
         Schicke deiner Freundin ein kompaktes Formular für neue Druckideen.
       </p>
       <form className="mt-6 flex flex-col gap-4" onSubmit={onSubmit}>
-        <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
+        <label className="flex flex-col gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
           Modell-URL
           <input
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-accent"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-accent dark:border-slate-700 dark:bg-slate-900 dark:text-haze"
             name="url"
             type="url"
             placeholder="https://www.printables.com/"
@@ -27,10 +29,10 @@
             required
           />
         </label>
-        <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
+        <label className="flex flex-col gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
           Gewünschte Anzahl
           <input
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-accent"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-accent dark:border-slate-700 dark:bg-slate-900 dark:text-haze"
             name="quantity"
             type="number"
             min="1"
@@ -39,20 +41,20 @@
             required
           />
         </label>
-        <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
+        <label className="flex flex-col gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
           Notizen / Ergänzungen
           <textarea
-            className="min-h-[120px] rounded-xl border border-slate-200 bg-white px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-accent"
+            className="min-h-[120px] rounded-xl border border-slate-200 bg-white px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-accent dark:border-slate-700 dark:bg-slate-900 dark:text-haze"
             name="notes"
             placeholder="Material, Farbe, Skalierung ..."
             value={formData.notes}
             onChange={onChange}
           />
         </label>
-        <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
+        <label className="flex flex-col gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
           Dringlichkeit
           <select
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-accent"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-accent dark:border-slate-700 dark:bg-slate-900 dark:text-haze"
             name="urgency"
             value={formData.urgency}
             onChange={onChange}
@@ -64,10 +66,10 @@
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
+        <label className="flex flex-col gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
           Filamentfarbe
           <select
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-accent"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-accent dark:border-slate-700 dark:bg-slate-900 dark:text-haze"
             name="colorId"
             value={formData.colorId}
             onChange={onColorIdChange}
@@ -84,10 +86,10 @@
         </label>
         {formData.colorId === "new" && (
           <div className="flex flex-col gap-3">
-            <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
+            <label className="flex flex-col gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
               Neue Farbe
               <input
-                className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-amber-400"
+                className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-amber-400 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-haze"
                 name="colorName"
                 type="text"
                 placeholder="z.B. Pastell Blau"
@@ -96,10 +98,10 @@
                 required
               />
             </label>
-            <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
+            <label className="flex flex-col gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
               Hersteller (optional)
               <input
-                className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-amber-400"
+                className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-amber-400 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-haze"
                 name="colorManufacturer"
                 type="text"
                 placeholder="z.B. Prusament"
@@ -107,7 +109,7 @@
                 value={formData.colorManufacturer}
                 onChange={onChange}
               />
-              <span className="text-xs text-amber-600">
+              <span className="text-xs text-amber-600 dark:text-amber-300">
                 Hinweis: Diese Farbe wird als nicht vorhanden markiert.
               </span>
             </label>

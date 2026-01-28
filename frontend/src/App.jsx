@@ -42,6 +42,18 @@ export default function App() {
   const [addingColor, setAddingColor] = useState(false);
   const [newColorName, setNewColorName] = useState("");
   const [newColorManufacturer, setNewColorManufacturer] = useState("");
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === "undefined") {
+      return "light";
+    }
+    const storedTheme = window.localStorage.getItem("theme");
+    if (storedTheme === "light" || storedTheme === "dark") {
+      return storedTheme;
+    }
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  });
 
   const projectCount = useMemo(() => projects.length, [projects]);
   const availableColors = useMemo(
@@ -84,6 +96,21 @@ export default function App() {
   useEffect(() => {
     loadColors();
   }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    const isDark = theme === "dark";
+    root.classList.remove("dark");
+    body.classList.remove("dark");
+    if (isDark) {
+      root.classList.add("dark");
+      body.classList.add("dark");
+    }
+    root.style.colorScheme = isDark ? "dark" : "light";
+    body.style.colorScheme = isDark ? "dark" : "light";
+    window.localStorage.setItem("theme", theme);
+  }, [theme]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -221,9 +248,15 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen app-shell text-ink">
+    <div className="min-h-screen app-shell text-ink dark:text-haze">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-10">
-        <Header projectCount={projectCount} />
+        <Header
+          projectCount={projectCount}
+          theme={theme}
+          onToggleTheme={() =>
+            setTheme((prevTheme) => (prevTheme === "dark" ? "light" : "dark"))
+          }
+        />
 
         <ErrorBanner error={error} />
 
