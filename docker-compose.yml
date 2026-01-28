@@ -1,0 +1,16 @@
+services:
+  printingqueue:
+    build: .
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend/data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DB_DIR=/app/data
+      - CORS_ORIGINS=http://localhost:5173
+      - MQTT_URL=mqtt://<BROKER-IP>:1883
+      - MQTT_USERNAME=
+      - MQTT_PASSWORD=
+      - MQTT_BASE_TOPIC=printingqueue
