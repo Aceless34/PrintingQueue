@@ -118,6 +118,31 @@ describe("Printing Queue API", () => {
     expect(res.body.color_name).toBe("Schwarz");
   });
 
+  test("POST /projects treats SQL injection payloads as data", async () => {
+    await setupApp();
+
+    const normal = await request.post("/projects").send({
+      url: "https://example.com/model",
+      quantity: 1,
+      urgency: "Mittel",
+    });
+    expect(normal.status).toBe(201);
+
+    const payload = "https://example.com/' OR 1=1; --";
+    const injected = await request.post("/projects").send({
+      url: payload,
+      quantity: 1,
+      urgency: "Mittel",
+      notes: "test'); DROP TABLE projects; --",
+    });
+    expect(injected.status).toBe(201);
+    expect(injected.body.url).toBe(payload);
+
+    const list = await request.get("/projects");
+    expect(list.status).toBe(200);
+    expect(list.body).toHaveLength(2);
+  });
+
   test("PATCH /projects updates status and archive", async () => {
     await setupApp();
 
@@ -209,6 +234,26 @@ describe("Printing Queue API", () => {
       .send({ name: "schwarz", in_stock: false });
     expect(second.status).toBe(200);
     expect(second.body.id).toBe(first.body.id);
+  });
+
+  test("POST /filament-colors treats SQL injection payloads as data", async () => {
+    await setupApp();
+
+    const payload = "Weiss'); DROP TABLE filament_colors; --";
+    const injected = await request
+      .post("/filament-colors")
+      .send({ name: payload, in_stock: true });
+    expect([200, 201]).toContain(injected.status);
+    expect(injected.body.name).toBe(payload);
+
+    const second = await request
+      .post("/filament-colors")
+      .send({ name: "Grau", in_stock: false });
+    expect([200, 201]).toContain(second.status);
+
+    const list = await request.get("/filament-colors");
+    expect(list.status).toBe(200);
+    expect(list.body).toHaveLength(2);
   });
 
   test("PATCH /filament-colors validates id, body and updates stock", async () => {
