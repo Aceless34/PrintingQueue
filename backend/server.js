@@ -54,7 +54,7 @@ app.get("/projects", async (req, res) => {
   try {
     const includeArchived = req.query.includeArchived === "1";
     const rows = await all(
-      `SELECT projects.*, filament_colors.name AS color_name, filament_colors.in_stock AS color_in_stock
+      `SELECT projects.*, filament_colors.name AS color_name, filament_colors.manufacturer AS color_manufacturer, filament_colors.in_stock AS color_in_stock
        FROM projects
        LEFT JOIN filament_colors ON filament_colors.id = projects.color_id
        ${includeArchived ? "" : "WHERE projects.archived = 0"}
@@ -83,7 +83,8 @@ const publishProjectStats = async () => {
 
 app.post("/projects", async (req, res) => {
   try {
-    const { url, quantity, notes, urgency, colorId, colorName } = req.body;
+    const { url, quantity, notes, urgency, colorId, colorName, colorManufacturer } =
+      req.body;
 
     if (!url || typeof url !== "string") {
       return res.status(400).json({ error: "URL is required" });
@@ -114,19 +115,24 @@ app.post("/projects", async (req, res) => {
       resolvedColorId = parsedColorId;
     } else if (colorName && typeof colorName === "string") {
       const trimmedName = colorName.trim();
+      const trimmedManufacturer =
+        typeof colorManufacturer === "string" ? colorManufacturer.trim() : "";
+      const normalizedManufacturer = trimmedManufacturer ? trimmedManufacturer : null;
       if (!trimmedName) {
         return res.status(400).json({ error: "Color name cannot be empty" });
       }
       const existing = await get(
-        `SELECT id FROM filament_colors WHERE name = ? COLLATE NOCASE`,
-        [trimmedName]
+        `SELECT id FROM filament_colors
+         WHERE LOWER(name) = LOWER(?)
+           AND LOWER(IFNULL(manufacturer, '')) = LOWER(IFNULL(?, ''))`,
+        [trimmedName, normalizedManufacturer]
       );
       if (existing) {
         resolvedColorId = existing.id;
       } else {
         const insertColor = await run(
-          `INSERT INTO filament_colors (name, in_stock) VALUES (?, 0)`,
-          [trimmedName]
+          `INSERT INTO filament_colors (name, manufacturer, in_stock) VALUES (?, ?, 0)`,
+          [trimmedName, normalizedManufacturer]
         );
         resolvedColorId = insertColor.lastID;
       }
@@ -139,7 +145,7 @@ app.post("/projects", async (req, res) => {
     );
 
     const project = await get(
-      `SELECT projects.*, filament_colors.name AS color_name, filament_colors.in_stock AS color_in_stock
+      `SELECT projects.*, filament_colors.name AS color_name, filament_colors.manufacturer AS color_manufacturer, filament_colors.in_stock AS color_in_stock
        FROM projects
        LEFT JOIN filament_colors ON filament_colors.id = projects.color_id
        WHERE projects.id = ?`,
@@ -187,7 +193,7 @@ app.patch("/projects/:id", async (req, res) => {
 
     await run(`UPDATE projects SET ${updates.join(", ")} WHERE id = ?`, params);
     const project = await get(
-      `SELECT projects.*, filament_colors.name AS color_name, filament_colors.in_stock AS color_in_stock
+      `SELECT projects.*, filament_colors.name AS color_name, filament_colors.manufacturer AS color_manufacturer, filament_colors.in_stock AS color_in_stock
        FROM projects
        LEFT JOIN filament_colors ON filament_colors.id = projects.color_id
        WHERE projects.id = ?`,
@@ -229,7 +235,7 @@ app.delete("/projects/:id", async (req, res) => {
 app.get("/filament-colors", async (_req, res) => {
   try {
     const rows = await all(
-      `SELECT * FROM filament_colors ORDER BY LOWER(name) ASC`
+      `SELECT * FROM filament_colors ORDER BY LOWER(name) ASC, LOWER(IFNULL(manufacturer, '')) ASC`
     );
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.json(rows);
@@ -240,17 +246,20 @@ app.get("/filament-colors", async (_req, res) => {
 
 app.post("/filament-colors", async (req, res) => {
   try {
-    const { name, in_stock } = req.body;
+    const { name, manufacturer, in_stock } = req.body;
     if (!name || typeof name !== "string" || !name.trim()) {
       return res.status(400).json({ error: "Name is required" });
     }
     const trimmedName = name.trim();
+    const trimmedManufacturer =
+      typeof manufacturer === "string" ? manufacturer.trim() : "";
+    const normalizedManufacturer = trimmedManufacturer ? trimmedManufacturer : null;
     const stockValue = in_stock ? 1 : 0;
 
     try {
       const insert = await run(
-        `INSERT INTO filament_colors (name, in_stock) VALUES (?, ?)`,
-        [trimmedName, stockValue]
+        `INSERT INTO filament_colors (name, manufacturer, in_stock) VALUES (?, ?, ?)`,
+        [trimmedName, normalizedManufacturer, stockValue]
       );
       const color = await get(`SELECT * FROM filament_colors WHERE id = ?`, [
         insert.lastID,
@@ -259,8 +268,10 @@ app.post("/filament-colors", async (req, res) => {
       return res.status(201).json(color);
     } catch (err) {
       const existing = await get(
-        `SELECT * FROM filament_colors WHERE name = ? COLLATE NOCASE`,
-        [trimmedName]
+        `SELECT * FROM filament_colors
+         WHERE LOWER(name) = LOWER(?)
+           AND LOWER(IFNULL(manufacturer, '')) = LOWER(IFNULL(?, ''))`,
+        [trimmedName, normalizedManufacturer]
       );
       if (!existing) {
         throw err;

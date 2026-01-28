@@ -42,6 +42,76 @@ const ensureColumn = async (tableName, columnName, columnDef) => {
   }
 };
 
+const migrateFilamentColors = async () => {
+  const columns = await all(`PRAGMA table_info(filament_colors)`);
+  if (columns.length === 0) return;
+
+  const hasManufacturer = columns.some((col) => col.name === "manufacturer");
+  const indexes = await all(`PRAGMA index_list(filament_colors)`);
+  const uniqueIndexes = indexes.filter((index) => index.unique);
+  let hasNameOnlyUnique = false;
+
+  for (const index of uniqueIndexes) {
+    const info = await all(`PRAGMA index_info(${index.name})`);
+    if (info.length === 1 && info[0].name === "name") {
+      hasNameOnlyUnique = true;
+      break;
+    }
+  }
+
+  if (hasManufacturer && !hasNameOnlyUnique) {
+    await run(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_filament_colors_name_manufacturer
+       ON filament_colors (LOWER(name), LOWER(IFNULL(manufacturer, '')))`
+    );
+    return;
+  }
+
+  await run("BEGIN");
+  try {
+    await run(
+      `CREATE TABLE filament_colors_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL COLLATE NOCASE,
+        manufacturer TEXT,
+        in_stock INTEGER NOT NULL DEFAULT 1,
+        grams_available INTEGER,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`
+    );
+
+    if (hasManufacturer) {
+      await run(
+        `INSERT INTO filament_colors_new (
+          id, name, manufacturer, in_stock, grams_available, created_at, updated_at
+        )
+        SELECT id, name, manufacturer, in_stock, grams_available, created_at, updated_at
+        FROM filament_colors;`
+      );
+    } else {
+      await run(
+        `INSERT INTO filament_colors_new (
+          id, name, manufacturer, in_stock, grams_available, created_at, updated_at
+        )
+        SELECT id, name, NULL, in_stock, grams_available, created_at, updated_at
+        FROM filament_colors;`
+      );
+    }
+
+    await run(`DROP TABLE filament_colors`);
+    await run(`ALTER TABLE filament_colors_new RENAME TO filament_colors`);
+    await run(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_filament_colors_name_manufacturer
+       ON filament_colors (LOWER(name), LOWER(IFNULL(manufacturer, '')))`
+    );
+    await run("COMMIT");
+  } catch (err) {
+    await run("ROLLBACK");
+    throw err;
+  }
+};
+
 const init = async () => {
   await run(
     `CREATE TABLE IF NOT EXISTS projects (
@@ -60,7 +130,8 @@ const init = async () => {
   await run(
     `CREATE TABLE IF NOT EXISTS filament_colors (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+      name TEXT NOT NULL COLLATE NOCASE,
+      manufacturer TEXT,
       in_stock INTEGER NOT NULL DEFAULT 1,
       grams_available INTEGER,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -69,6 +140,7 @@ const init = async () => {
   );
 
   await ensureColumn("projects", "color_id", "INTEGER");
+  await migrateFilamentColors();
 };
 
 module.exports = { db, run, get, all, init };

@@ -1,10 +1,12 @@
 ﻿%% Auto-generated from SQLite schema in backend/data/printingqueue.db
 %% Note: No foreign keys are declared in the database.
+%% Extended to include a manufacturer field for filament colors (requested).
 
 erDiagram
   FILAMENT_COLORS {
     INTEGER id PK
-    TEXT name "UNIQUE, NOCASE"
+    TEXT name "NOCASE, UNIQUE(name, manufacturer)"
+    TEXT manufacturer
     INTEGER in_stock "DEFAULT 1"
     INTEGER grams_available
     TEXT created_at "DEFAULT CURRENT_TIMESTAMP"

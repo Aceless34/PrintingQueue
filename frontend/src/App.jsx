@@ -25,6 +25,7 @@ export default function App() {
     urgency: "Mittel",
     colorId: "",
     colorName: "",
+    colorManufacturer: "",
   });
   const [projects, setProjects] = useState([]);
   const [colors, setColors] = useState([]);
@@ -34,12 +35,19 @@ export default function App() {
   const [error, setError] = useState("");
   const [addingColor, setAddingColor] = useState(false);
   const [newColorName, setNewColorName] = useState("");
+  const [newColorManufacturer, setNewColorManufacturer] = useState("");
 
   const projectCount = useMemo(() => projects.length, [projects]);
   const availableColors = useMemo(
     () => colors.filter((color) => color.in_stock),
     [colors]
   );
+  const manufacturers = useMemo(() => {
+    const list = colors
+      .map((color) => (color.manufacturer || "").trim())
+      .filter(Boolean);
+    return Array.from(new Set(list)).sort((a, b) => a.localeCompare(b));
+  }, [colors]);
 
   const loadProjects = async () => {
     setLoading(true);
@@ -99,12 +107,16 @@ export default function App() {
 
       if (formData.colorId === "new") {
         const trimmedName = formData.colorName.trim();
+        const trimmedManufacturer = formData.colorManufacturer.trim();
         if (!trimmedName) {
           setError("Bitte eine neue Farbe angeben.");
           setSubmitting(false);
           return;
         }
         payload.colorName = trimmedName;
+        if (trimmedManufacturer) {
+          payload.colorManufacturer = trimmedManufacturer;
+        }
       } else if (formData.colorId) {
         payload.colorId = Number(formData.colorId);
       }
@@ -129,6 +141,7 @@ export default function App() {
         urgency: "Mittel",
         colorId: "",
         colorName: "",
+        colorManufacturer: "",
       });
       await loadProjects();
       await loadColors();
@@ -191,6 +204,7 @@ export default function App() {
   const addColor = async (event) => {
     event.preventDefault();
     const trimmedName = newColorName.trim();
+    const trimmedManufacturer = newColorManufacturer.trim();
     if (!trimmedName) {
       setError("Bitte eine Farbe eingeben.");
       return;
@@ -203,10 +217,15 @@ export default function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name: trimmedName, in_stock: true }),
+        body: JSON.stringify({
+          name: trimmedName,
+          manufacturer: trimmedManufacturer || null,
+          in_stock: true,
+        }),
       });
       if (!res.ok) throw new Error("Farbe konnte nicht gespeichert werden");
       setNewColorName("");
+      setNewColorManufacturer("");
       await loadColors();
     } catch (err) {
       setError("Farbe konnte nicht gespeichert werden.");
@@ -328,7 +347,11 @@ export default function App() {
                   onChange={(event) => {
                     handleChange(event);
                     if (event.target.value !== "new") {
-                      setFormData((prev) => ({ ...prev, colorName: "" }));
+                      setFormData((prev) => ({
+                        ...prev,
+                        colorName: "",
+                        colorManufacturer: "",
+                      }));
                     }
                   }}
                 >
@@ -336,27 +359,42 @@ export default function App() {
                   {availableColors.map((color) => (
                     <option key={color.id} value={String(color.id)}>
                       {color.name}
+                      {color.manufacturer ? ` (${color.manufacturer})` : ""}
                     </option>
                   ))}
                   <option value="new">Andere / nicht vorhanden</option>
                 </select>
               </label>
               {formData.colorId === "new" && (
-                <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
-                  Neue Farbe
-                  <input
-                    className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-amber-400"
-                    name="colorName"
-                    type="text"
-                    placeholder="z.B. Pastell Blau"
-                    value={formData.colorName}
-                    onChange={handleChange}
-                    required
-                  />
-                  <span className="text-xs text-amber-600">
-                    Hinweis: Diese Farbe wird als nicht vorhanden markiert.
-                  </span>
-                </label>
+                <div className="flex flex-col gap-3">
+                  <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
+                    Neue Farbe
+                    <input
+                      className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-amber-400"
+                      name="colorName"
+                      type="text"
+                      placeholder="z.B. Pastell Blau"
+                      value={formData.colorName}
+                      onChange={handleChange}
+                      required
+                    />
+                  </label>
+                  <label className="flex flex-col gap-2 text-sm font-medium text-slate-600">
+                    Hersteller (optional)
+                    <input
+                      className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-base text-ink shadow-sm outline-none focus:border-amber-400"
+                      name="colorManufacturer"
+                      type="text"
+                      placeholder="z.B. Prusament"
+                      list="manufacturer-options"
+                      value={formData.colorManufacturer}
+                      onChange={handleChange}
+                    />
+                    <span className="text-xs text-amber-600">
+                      Hinweis: Diese Farbe wird als nicht vorhanden markiert.
+                    </span>
+                  </label>
+                </div>
               )}
               <button
                 className="mt-2 rounded-xl bg-accent px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-accentDeep disabled:cursor-not-allowed disabled:opacity-60"
@@ -466,7 +504,13 @@ export default function App() {
                                     : "bg-slate-100 text-slate-600"
                                 }`}
                               >
-                                {project.color_name || "Keine"}
+                                {project.color_name
+                                  ? `${project.color_name}${
+                                      project.color_manufacturer
+                                        ? ` (${project.color_manufacturer})`
+                                        : ""
+                                    }`
+                                  : "Keine"}
                               </span>
                               {project.color_in_stock === 0 && (
                                 <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
@@ -519,6 +563,14 @@ export default function App() {
                     value={newColorName}
                     onChange={(event) => setNewColorName(event.target.value)}
                   />
+                  <input
+                    className="rounded-full border border-slate-200 px-3 py-1 text-xs text-ink outline-none focus:border-accent"
+                    type="text"
+                    placeholder="Hersteller (optional)"
+                    list="manufacturer-options"
+                    value={newColorManufacturer}
+                    onChange={(event) => setNewColorManufacturer(event.target.value)}
+                  />
                   <button
                     className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-500 hover:border-accent hover:text-accent disabled:opacity-60"
                     type="submit"
@@ -546,6 +598,11 @@ export default function App() {
                           }`}
                         />
                         <span className="font-medium text-ink">{color.name}</span>
+                        {color.manufacturer && (
+                          <span className="text-xs text-slate-500">
+                            ({color.manufacturer})
+                          </span>
+                        )}
                         {!color.in_stock && (
                           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                             !
@@ -566,6 +623,11 @@ export default function App() {
           </div>
         </section>
       </div>
+      <datalist id="manufacturer-options">
+        {manufacturers.map((manufacturer) => (
+          <option key={manufacturer} value={manufacturer} />
+        ))}
+      </datalist>
     </div>
   );
 }
