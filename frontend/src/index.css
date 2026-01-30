@@ -57,3 +57,16 @@ body {
   background: rgba(15, 23, 42, 0.78);
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
+
+.dark input:not([type="color"]),
+.dark select,
+.dark textarea {
+  color: #e2e8f0;
+  background-color: #0f172a;
+  border-color: #334155;
+}
+
+.dark input:not([type="color"])::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8;
+}

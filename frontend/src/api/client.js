@@ -57,3 +57,80 @@ export const updateColor = (id, payload) =>
     },
     body: JSON.stringify(payload),
   });
+
+export const deleteColor = (id) =>
+  request(`/filament-colors/${id}`, {
+    method: "DELETE",
+  });
+
+export const fetchManufacturers = () => request("/filament-manufacturers");
+
+export const createManufacturer = (payload) =>
+  request("/filament-manufacturers", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+export const updateManufacturer = (id, payload) =>
+  request(`/filament-manufacturers/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+export const deleteManufacturer = (id) =>
+  request(`/filament-manufacturers/${id}`, {
+    method: "DELETE",
+  });
+
+export const fetchMaterials = () => request("/filament-materials");
+
+export const createMaterial = (payload) =>
+  request("/filament-materials", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+export const updateMaterial = (id, payload) =>
+  request(`/filament-materials/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+export const deleteMaterial = (id) =>
+  request(`/filament-materials/${id}`, {
+    method: "DELETE",
+  });
+
+export const fetchRolls = () => request("/filament-rolls");
+
+export const fetchRollUsage = (id) => request(`/filament-rolls/${id}/usage`);
+
+export const createRoll = (payload) =>
+  request("/filament-rolls", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+export const updateRoll = (id, payload) =>
+  request(`/filament-rolls/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
