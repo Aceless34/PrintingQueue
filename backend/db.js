@@ -112,6 +112,13 @@ const migrateFilamentColors = async () => {
   }
 };
 
+const migrateProjectColors = async () => {
+  await run(
+    `INSERT OR IGNORE INTO project_colors (project_id, color_id)
+     SELECT id, color_id FROM projects WHERE color_id IS NOT NULL`
+  );
+};
+
 const init = async () => {
   await run(
     `CREATE TABLE IF NOT EXISTS projects (
@@ -132,6 +139,8 @@ const init = async () => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL COLLATE NOCASE,
       manufacturer TEXT,
+      material_type TEXT,
+      hex_color TEXT,
       in_stock INTEGER NOT NULL DEFAULT 1,
       grams_available INTEGER,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -139,8 +148,82 @@ const init = async () => {
     );`
   );
 
+  await run(
+    `CREATE TABLE IF NOT EXISTS filament_manufacturers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL COLLATE NOCASE,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`
+  );
+
+  await run(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_filament_manufacturers_name
+     ON filament_manufacturers (LOWER(name))`
+  );
+
+  await run(
+    `CREATE TABLE IF NOT EXISTS filament_materials (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL COLLATE NOCASE,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`
+  );
+
+  await run(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_filament_materials_name
+     ON filament_materials (LOWER(name))`
+  );
+
+  await run(
+    `CREATE TABLE IF NOT EXISTS project_colors (
+      project_id INTEGER NOT NULL,
+      color_id INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (project_id, color_id)
+    );`
+  );
+
+  await run(
+    `CREATE TABLE IF NOT EXISTS filament_rolls (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      color_id INTEGER NOT NULL,
+      label TEXT,
+      spool_weight_grams INTEGER,
+      grams_total INTEGER NOT NULL,
+      grams_remaining INTEGER NOT NULL,
+      weight_current_grams INTEGER,
+      purchase_price REAL,
+      purchased_at TEXT,
+      opened_at TEXT,
+      last_dried_at TEXT,
+      needs_drying INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`
+  );
+
+  await run(
+    `CREATE TABLE IF NOT EXISTS project_filament_usage (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id INTEGER NOT NULL,
+      roll_id INTEGER NOT NULL,
+      grams_used INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`
+  );
+
   await ensureColumn("projects", "color_id", "INTEGER");
+  await ensureColumn("filament_colors", "material_type", "TEXT");
+  await ensureColumn("filament_colors", "hex_color", "TEXT");
+  await ensureColumn("filament_rolls", "spool_weight_grams", "INTEGER");
+  await ensureColumn("filament_rolls", "weight_current_grams", "INTEGER");
+  await ensureColumn("filament_rolls", "purchase_price", "REAL");
+  await ensureColumn("filament_rolls", "purchased_at", "TEXT");
+  await ensureColumn("filament_rolls", "opened_at", "TEXT");
+  await ensureColumn("filament_rolls", "last_dried_at", "TEXT");
+  await ensureColumn("filament_rolls", "needs_drying", "INTEGER NOT NULL DEFAULT 0");
   await migrateFilamentColors();
+  await migrateProjectColors();
 };
 
 const close = () =>

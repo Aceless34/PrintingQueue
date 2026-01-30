@@ -1,32 +1,32 @@
 ﻿const express = require("express");
 const {
-  listColors,
-  createColor,
-  updateColor,
-  deleteColor,
-} = require("../services/filamentColorsService");
+  listManufacturers,
+  createManufacturer,
+  updateManufacturer,
+  deleteManufacturer,
+} = require("../services/filamentManufacturersService");
 const { createHttpError, getErrorStatus } = require("../utils/httpErrors");
 
 const router = express.Router();
 
 router.get("/", async (_req, res) => {
   try {
-    const rows = await listColors();
+    const rows = await listManufacturers();
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: "Failed to load filament colors" });
+    res.status(500).json({ error: "Failed to load manufacturers" });
   }
 });
 
 router.post("/", async (req, res) => {
   try {
-    const { color, created } = await createColor(req.body);
+    const manufacturer = await createManufacturer(req.body);
     res.setHeader("Content-Type", "application/json; charset=utf-8");
-    res.status(created ? 201 : 200).json(color);
+    res.status(201).json(manufacturer);
   } catch (err) {
     const status = getErrorStatus(err);
-    res.status(status).json({ error: err.message || "Failed to save filament color" });
+    res.status(status).json({ error: err.message || "Failed to save manufacturer" });
   }
 });
 
@@ -34,15 +34,16 @@ router.patch("/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) {
-      throw createHttpError(400, "Invalid color id");
+      throw createHttpError(400, "Invalid manufacturer id");
     }
-
-    const color = await updateColor(id, req.body);
+    const updated = await updateManufacturer(id, req.body);
     res.setHeader("Content-Type", "application/json; charset=utf-8");
-    res.json(color);
+    res.json(updated);
   } catch (err) {
     const status = getErrorStatus(err);
-    res.status(status).json({ error: err.message || "Failed to update filament color" });
+    res
+      .status(status)
+      .json({ error: err.message || "Failed to update manufacturer" });
   }
 });
 
@@ -50,14 +51,15 @@ router.delete("/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) {
-      throw createHttpError(400, "Invalid color id");
+      throw createHttpError(400, "Invalid manufacturer id");
     }
-
-    await deleteColor(id);
+    await deleteManufacturer(id);
     res.status(204).send();
   } catch (err) {
     const status = getErrorStatus(err);
-    res.status(status).json({ error: err.message || "Failed to delete filament color" });
+    res
+      .status(status)
+      .json({ error: err.message || "Failed to delete manufacturer" });
   }
 });
 
