@@ -69,31 +69,31 @@ const createRoll = async ({
   }
 
   const parsedTotal = Number(gramsTotal);
-  if (!Number.isInteger(parsedTotal) || parsedTotal <= 0) {
-    throw createHttpError(400, "Total grams must be a positive integer");
+  if (!Number.isFinite(parsedTotal) || parsedTotal <= 0) {
+    throw createHttpError(400, "Total grams must be a positive number");
   }
 
   let parsedSpoolWeight = null;
   if (spoolWeightGrams !== undefined && spoolWeightGrams !== null && spoolWeightGrams !== "") {
     parsedSpoolWeight = Number(spoolWeightGrams);
-    if (!Number.isInteger(parsedSpoolWeight) || parsedSpoolWeight < 0) {
-      throw createHttpError(400, "Spool weight must be a non-negative integer");
+    if (!Number.isFinite(parsedSpoolWeight) || parsedSpoolWeight < 0) {
+      throw createHttpError(400, "Spool weight must be a non-negative number");
     }
   }
 
   let parsedWeightCurrent = null;
   if (weightCurrentGrams !== undefined && weightCurrentGrams !== null && weightCurrentGrams !== "") {
     parsedWeightCurrent = Number(weightCurrentGrams);
-    if (!Number.isInteger(parsedWeightCurrent) || parsedWeightCurrent < 0) {
-      throw createHttpError(400, "Current weight must be a non-negative integer");
+    if (!Number.isFinite(parsedWeightCurrent) || parsedWeightCurrent < 0) {
+      throw createHttpError(400, "Current weight must be a non-negative number");
     }
   }
 
   let parsedRemaining = null;
   if (gramsRemaining !== undefined && gramsRemaining !== null && gramsRemaining !== "") {
     parsedRemaining = Number(gramsRemaining);
-    if (!Number.isInteger(parsedRemaining) || parsedRemaining < 0) {
-      throw createHttpError(400, "Remaining grams must be a non-negative integer");
+    if (!Number.isFinite(parsedRemaining) || parsedRemaining < 0) {
+      throw createHttpError(400, "Remaining grams must be a non-negative number");
     }
   } else if (parsedWeightCurrent !== null && parsedSpoolWeight !== null) {
     parsedRemaining = parsedWeightCurrent - parsedSpoolWeight;
@@ -193,8 +193,8 @@ const updateRoll = async (
 
   if (nextSpoolWeight !== null && nextSpoolWeight !== "") {
     nextSpoolWeight = Number(nextSpoolWeight);
-    if (!Number.isInteger(nextSpoolWeight) || nextSpoolWeight < 0) {
-      throw createHttpError(400, "Spool weight must be a non-negative integer");
+    if (!Number.isFinite(nextSpoolWeight) || nextSpoolWeight < 0) {
+      throw createHttpError(400, "Spool weight must be a non-negative number");
     }
   } else {
     nextSpoolWeight = null;
@@ -202,22 +202,22 @@ const updateRoll = async (
 
   if (nextWeightCurrent !== null && nextWeightCurrent !== "") {
     nextWeightCurrent = Number(nextWeightCurrent);
-    if (!Number.isInteger(nextWeightCurrent) || nextWeightCurrent < 0) {
-      throw createHttpError(400, "Current weight must be a non-negative integer");
+    if (!Number.isFinite(nextWeightCurrent) || nextWeightCurrent < 0) {
+      throw createHttpError(400, "Current weight must be a non-negative number");
     }
   } else {
     nextWeightCurrent = null;
   }
 
   nextTotal = Number(nextTotal);
-  if (!Number.isInteger(nextTotal) || nextTotal <= 0) {
-    throw createHttpError(400, "Total grams must be a positive integer");
+  if (!Number.isFinite(nextTotal) || nextTotal <= 0) {
+    throw createHttpError(400, "Total grams must be a positive number");
   }
 
   if (nextRemaining !== null && nextRemaining !== "") {
     nextRemaining = Number(nextRemaining);
-    if (!Number.isInteger(nextRemaining) || nextRemaining < 0) {
-      throw createHttpError(400, "Remaining grams must be a non-negative integer");
+    if (!Number.isFinite(nextRemaining) || nextRemaining < 0) {
+      throw createHttpError(400, "Remaining grams must be a non-negative number");
     }
   } else {
     nextRemaining = null;

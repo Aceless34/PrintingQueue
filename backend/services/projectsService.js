@@ -359,8 +359,8 @@ const updateProject = async (id, { status, archived, consumptions }) => {
         if (!Number.isInteger(rollId)) {
           throw createHttpError(400, "Roll id must be an integer");
         }
-        if (!Number.isInteger(gramsUsed) || gramsUsed <= 0) {
-          throw createHttpError(400, "Grams must be a positive integer");
+        if (!Number.isFinite(gramsUsed) || gramsUsed <= 0) {
+          throw createHttpError(400, "Grams must be a positive number");
         }
 
         const roll = await get(

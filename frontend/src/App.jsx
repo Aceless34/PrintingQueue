@@ -333,20 +333,38 @@ export default function App() {
 
   const submitConsumption = async (projectId) => {
     setError("");
-    const entries = (consumptionDrafts[projectId] || [])
+    const rawEntries = consumptionDrafts[projectId] || [];
+    const parseNumberInput = (value) => {
+      if (value === undefined || value === null) return null;
+      const normalized = String(value).trim().replace(",", ".");
+      if (!normalized) return null;
+      const parsed = Number(normalized);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    const entries = rawEntries
       .map((entry) => ({
-        rollId: entry.rollId ? Number(entry.rollId) : null,
-        grams: entry.grams ? Number(entry.grams) : null,
+        rollId: parseNumberInput(entry.rollId),
+        grams: parseNumberInput(entry.grams),
       }))
       .filter(
         (entry) =>
           Number.isInteger(entry.rollId) &&
-          Number.isInteger(entry.grams) &&
+          Number.isFinite(entry.grams) &&
           entry.grams > 0
       );
 
     if (entries.length === 0) {
-      setError("Bitte einen Filamentverbrauch angeben.");
+      const hasAnyInput = rawEntries.some(
+        (entry) =>
+          String(entry.rollId || "").trim() ||
+          String(entry.grams || "").trim()
+      );
+      setError(
+        hasAnyInput
+          ? "Bitte eine gueltige Rolle und Grammzahl angeben."
+          : "Bitte einen Filamentverbrauch angeben."
+      );
       return;
     }
 
