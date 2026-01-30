@@ -1,4 +1,4 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
@@ -78,7 +78,8 @@ describe("Printing Queue API", () => {
 
     expect(res.status).toBe(201);
     expect(res.body.color_name).toBe("Pastell Blau");
-    expect(res.body.color_in_stock).toBe(0);
+    expect(res.body.colors).toHaveLength(1);
+    expect(res.body.colors[0].in_stock).toBe(0);
 
     const colors = await request.get("/filament-colors");
     expect(colors.status).toBe(200);
@@ -116,6 +117,28 @@ describe("Printing Queue API", () => {
 
     expect(res.status).toBe(201);
     expect(res.body.color_name).toBe("Schwarz");
+    expect(res.body.colors).toHaveLength(1);
+  });
+
+  test("POST /projects supports multiple colors", async () => {
+    await setupApp();
+
+    const first = await request
+      .post("/filament-colors")
+      .send({ name: "Rot", in_stock: true });
+    const second = await request
+      .post("/filament-colors")
+      .send({ name: "Weiss", in_stock: true });
+
+    const res = await request.post("/projects").send({
+      url: "https://example.com/model",
+      quantity: 1,
+      urgency: "Mittel",
+      colorIds: [first.body.id, second.body.id],
+    });
+
+    expect(res.status).toBe(201);
+    expect(res.body.colors).toHaveLength(2);
   });
 
   test("POST /projects treats SQL injection payloads as data", async () => {
@@ -141,6 +164,21 @@ describe("Printing Queue API", () => {
     const list = await request.get("/projects");
     expect(list.status).toBe(200);
     expect(list.body).toHaveLength(2);
+  });
+
+  test("PATCH /projects requires consumptions when marking as finished", async () => {
+    await setupApp();
+
+    const created = await request.post("/projects").send({
+      url: "https://example.com/model",
+      quantity: 1,
+      urgency: "Mittel",
+    });
+
+    const updated = await request
+      .patch(`/projects/${created.body.id}`)
+      .send({ status: "Fertig" });
+    expect(updated.status).toBe(400);
   });
 
   test("PATCH /projects updates status and archive", async () => {
@@ -187,6 +225,70 @@ describe("Printing Queue API", () => {
       .patch(`/projects/${created.body.id}`)
       .send({ status: "Jetzt" });
     expect(resBadStatus.status).toBe(400);
+  });
+
+  test("PATCH /projects consumes filament rolls", async () => {
+    await setupApp();
+
+    const color = await request
+      .post("/filament-colors")
+      .send({ name: "Grau", in_stock: true });
+
+    const roll = await request.post("/filament-rolls").send({
+      colorId: color.body.id,
+      gramsTotal: 1000,
+    });
+
+    const project = await request.post("/projects").send({
+      url: "https://example.com/model",
+      quantity: 1,
+      urgency: "Mittel",
+      colorId: color.body.id,
+    });
+
+    const updated = await request
+      .patch(`/projects/${project.body.id}`)
+      .send({
+        status: "Fertig",
+        consumptions: [{ rollId: roll.body.id, grams: 120 }],
+      });
+
+    expect(updated.status).toBe(200);
+    expect(updated.body.total_grams_used).toBe(120);
+
+    const rolls = await request.get("/filament-rolls");
+    expect(rolls.status).toBe(200);
+    expect(rolls.body[0].grams_remaining).toBe(880);
+  });
+
+  test("PATCH /filament-rolls rejects invalid remaining/weight updates", async () => {
+    await setupApp();
+
+    const color = await request
+      .post("/filament-colors")
+      .send({ name: "Orange", in_stock: true });
+
+    const roll = await request.post("/filament-rolls").send({
+      colorId: color.body.id,
+      gramsTotal: 500,
+      gramsRemaining: 400,
+    });
+    expect(roll.status).toBe(201);
+
+    const resTooLowTotal = await request
+      .patch(`/filament-rolls/${roll.body.id}`)
+      .send({ gramsTotal: 300 });
+    expect(resTooLowTotal.status).toBe(400);
+
+    const resBadWeight = await request
+      .patch(`/filament-rolls/${roll.body.id}`)
+      .send({ spoolWeightGrams: 200, weightCurrentGrams: 150 });
+    expect(resBadWeight.status).toBe(400);
+
+    const unchanged = await request.get(`/filament-rolls/${roll.body.id}`);
+    expect(unchanged.status).toBe(200);
+    expect(unchanged.body.grams_total).toBe(500);
+    expect(unchanged.body.grams_remaining).toBe(400);
   });
 
   test("DELETE /projects validates id and removes item", async () => {
@@ -281,5 +383,139 @@ describe("Printing Queue API", () => {
       .send({ in_stock: false });
     expect(updated.status).toBe(200);
     expect(updated.body.in_stock).toBe(0);
+  });
+
+  test("DELETE /filament-colors removes unused colors and rejects in-use", async () => {
+    await setupApp();
+
+    const color = await request
+      .post("/filament-colors")
+      .send({ name: "Kupfer", in_stock: true });
+    const resDelete = await request.delete(`/filament-colors/${color.body.id}`);
+    expect(resDelete.status).toBe(204);
+
+    const usedColor = await request
+      .post("/filament-colors")
+      .send({ name: "Cyan", in_stock: true });
+    const roll = await request.post("/filament-rolls").send({
+      colorId: usedColor.body.id,
+      gramsTotal: 1000,
+    });
+    expect(roll.status).toBe(201);
+
+    const resInUse = await request.delete(
+      `/filament-colors/${usedColor.body.id}`
+    );
+    expect(resInUse.status).toBe(400);
+  });
+
+  test("POST /filament-rolls validates color and grams", async () => {
+    await setupApp();
+
+    const color = await request
+      .post("/filament-colors")
+      .send({ name: "Blau", in_stock: true });
+
+    const resBad = await request.post("/filament-rolls").send({
+      colorId: color.body.id,
+      gramsTotal: -5,
+    });
+    expect(resBad.status).toBe(400);
+
+    const created = await request.post("/filament-rolls").send({
+      colorId: color.body.id,
+      gramsTotal: 750,
+      label: "Rolle #2",
+    });
+    expect(created.status).toBe(201);
+    expect(created.body.grams_remaining).toBe(750);
+  });
+
+  test("POST /filament-manufacturers and /filament-materials create entries", async () => {
+    await setupApp();
+
+    const manufacturer = await request
+      .post("/filament-manufacturers")
+      .send({ name: "Prusament" });
+    expect(manufacturer.status).toBe(201);
+
+    const material = await request
+      .post("/filament-materials")
+      .send({ name: "PLA" });
+    expect(material.status).toBe(201);
+
+    const listManufacturers = await request.get("/filament-manufacturers");
+    expect(listManufacturers.status).toBe(200);
+    expect(listManufacturers.body[0].name).toBe("Prusament");
+
+    const listMaterials = await request.get("/filament-materials");
+    expect(listMaterials.status).toBe(200);
+    expect(listMaterials.body[0].name).toBe("PLA");
+  });
+
+  test("PATCH/DELETE /filament-manufacturers and /filament-materials", async () => {
+    await setupApp();
+
+    const manufacturer = await request
+      .post("/filament-manufacturers")
+      .send({ name: "Bambu" });
+    const updatedManufacturer = await request
+      .patch(`/filament-manufacturers/${manufacturer.body.id}`)
+      .send({ name: "Bambu Lab" });
+    expect(updatedManufacturer.status).toBe(200);
+    expect(updatedManufacturer.body.name).toBe("Bambu Lab");
+
+    const material = await request
+      .post("/filament-materials")
+      .send({ name: "ABS" });
+    const updatedMaterial = await request
+      .patch(`/filament-materials/${material.body.id}`)
+      .send({ name: "ASA" });
+    expect(updatedMaterial.status).toBe(200);
+    expect(updatedMaterial.body.name).toBe("ASA");
+
+    const deleteManufacturer = await request.delete(
+      `/filament-manufacturers/${manufacturer.body.id}`
+    );
+    expect(deleteManufacturer.status).toBe(204);
+
+    const deleteMaterial = await request.delete(
+      `/filament-materials/${material.body.id}`
+    );
+    expect(deleteMaterial.status).toBe(204);
+  });
+
+  test("PATCH /filament-manufacturers and /filament-materials keeps colors in sync", async () => {
+    await setupApp();
+
+    const manufacturer = await request
+      .post("/filament-manufacturers")
+      .send({ name: "MakerCo" });
+    const material = await request
+      .post("/filament-materials")
+      .send({ name: "PETG" });
+
+    const color = await request.post("/filament-colors").send({
+      name: "Cyan",
+      manufacturer: manufacturer.body.name,
+      material_type: material.body.name,
+      in_stock: true,
+    });
+    expect(color.status).toBe(201);
+
+    const updatedManufacturer = await request
+      .patch(`/filament-manufacturers/${manufacturer.body.id}`)
+      .send({ name: "MakerCo Pro" });
+    expect(updatedManufacturer.status).toBe(200);
+
+    const updatedMaterial = await request
+      .patch(`/filament-materials/${material.body.id}`)
+      .send({ name: "PETG+" });
+    expect(updatedMaterial.status).toBe(200);
+
+    const colors = await request.get("/filament-colors");
+    const updatedColor = colors.body.find((item) => item.id === color.body.id);
+    expect(updatedColor.manufacturer).toBe("MakerCo Pro");
+    expect(updatedColor.material_type).toBe("PETG+");
   });
 });
