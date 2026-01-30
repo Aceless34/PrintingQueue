@@ -1,4 +1,4 @@
-# Backend
+ï»¿# Backend
 
 ## Einstieg
 
@@ -9,8 +9,8 @@
 ## Express-App
 
 - JSON-Parser aktiviert.
-- CORS-Whitelist über `CORS_ORIGINS` oder Dev-Default.
-- `/health` für Liveness-Checks.
+- CORS-Whitelist ueber `CORS_ORIGINS` oder Dev-Default.
+- `/health` fuer Liveness-Checks.
 - In `NODE_ENV=production`: statische Dateien in `backend/public`.
 
 ## Validierung (Auswahl)
@@ -20,7 +20,10 @@
 - `urgency`: `Niedrig | Mittel | Hoch`.
 - `status`: `Offen | In Arbeit | Fertig`.
 - `colorId`: falls gesetzt, muss existieren.
+- `colorIds`: optionale Liste fuer Mehrfarbendruck.
 - `colorName`: falls gesetzt, wird erzeugt oder wiederverwendet.
+- `consumptions`: Array mit `{ rollId, grams }`, Pflicht beim Abschluss.
+- `spoolWeightGrams`, `weightCurrentGrams`: nicht-negativ; berechnen den Rest automatisch.
 
 ## Fehlerbehandlung
 
@@ -31,7 +34,7 @@
 ## MQTT
 
 - Verbindung nur, wenn `MQTT_URL` gesetzt ist.
-- Topics werden nach jeder Änderung an Projekten publiziert.
+- Topics werden nach jeder Aenderung an Projekten publiziert.
 - Retain-Flag ist aktiv.
 
 Details siehe [MQTT](mqtt.md).

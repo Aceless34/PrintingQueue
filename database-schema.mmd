@@ -2,13 +2,34 @@
 %% Note: No foreign keys are declared in the database.
 %% Extended to include a manufacturer field for filament colors (requested).
 
+%% Updated to include filament rolls, multi-color projects, and usage tracking.
+
 erDiagram
   FILAMENT_COLORS {
     INTEGER id PK
     TEXT name "NOCASE, UNIQUE(name, manufacturer)"
     TEXT manufacturer
+    TEXT material_type
+    TEXT hex_color
     INTEGER in_stock "DEFAULT 1"
     INTEGER grams_available
+    TEXT created_at "DEFAULT CURRENT_TIMESTAMP"
+    TEXT updated_at "DEFAULT CURRENT_TIMESTAMP"
+  }
+
+  FILAMENT_ROLLS {
+    INTEGER id PK
+    INTEGER color_id
+    TEXT label
+    INTEGER spool_weight_grams
+    INTEGER grams_total
+    INTEGER grams_remaining
+    INTEGER weight_current_grams
+    REAL purchase_price
+    TEXT purchased_at
+    TEXT opened_at
+    TEXT last_dried_at
+    INTEGER needs_drying "DEFAULT 0"
     TEXT created_at "DEFAULT CURRENT_TIMESTAMP"
     TEXT updated_at "DEFAULT CURRENT_TIMESTAMP"
   }
@@ -26,5 +47,24 @@ erDiagram
     INTEGER color_id
   }
 
-  %% Conceptual link (not enforced by FK): projects.color_id -> filament_colors.id
+  PROJECT_COLORS {
+    INTEGER project_id
+    INTEGER color_id
+    TEXT created_at "DEFAULT CURRENT_TIMESTAMP"
+  }
+
+  PROJECT_FILAMENT_USAGE {
+    INTEGER id PK
+    INTEGER project_id
+    INTEGER roll_id
+    INTEGER grams_used
+    TEXT created_at "DEFAULT CURRENT_TIMESTAMP"
+  }
+
+  %% Conceptual links (not enforced by FK)
   PROJECTS }o--|| FILAMENT_COLORS : "color_id (optional)"
+  PROJECT_COLORS }o--|| PROJECTS : "project_id"
+  PROJECT_COLORS }o--|| FILAMENT_COLORS : "color_id"
+  FILAMENT_ROLLS }o--|| FILAMENT_COLORS : "color_id"
+  PROJECT_FILAMENT_USAGE }o--|| PROJECTS : "project_id"
+  PROJECT_FILAMENT_USAGE }o--|| FILAMENT_ROLLS : "roll_id"
